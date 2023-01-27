@@ -1,9 +1,11 @@
 import { Prisma, PrismaClient } from '@prisma/client'
 import express from 'express'
+import cors from 'cors';
 
 const prisma = new PrismaClient()
 const app = express()
 
+app.use((req, res, next) => { next(); }, cors({ origin: process.env.CORS_ORIGIN }));
 app.use(express.json())
 
 app.post(`/message/create`, async (req, res) => {
@@ -31,12 +33,19 @@ app.delete(`/message/:id`, async (req, res) => {
 });
 
 app.get(`/message/:id`, async (req, res) => {
-  const { id }: { id?: string } = req.params
+  const { id } = req.params
 
-  const post = await prisma.message.findUnique({
-    where: { id: String(id) },
-  })
-  res.json(post)
+  try {
+    const post = await prisma.message.findUnique({
+      where: { id: String(id) },
+    })
+
+    if (!post) throw new Error;
+
+    res.json(post)
+  } catch (error) {
+    res.status(404).send();
+  }
 })
 
 app.listen(3000, () =>
