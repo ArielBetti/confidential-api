@@ -11,6 +11,8 @@ app.use(express.json())
 app.post(`/message/create`, async (req, res) => {
   const { title, subTitle, message } = req.body;
 
+  if (!title || !message) return res.status(400).send();
+
   const result = await prisma.message.create({
     data: {
       message,
@@ -24,12 +26,21 @@ app.post(`/message/create`, async (req, res) => {
 
 app.delete(`/message/:id`, async (req, res) => {
   const { id } = req.params
-  const post = await prisma.message.delete({
-    where: {
-      id: String(id),
-    },
-  })
-  res.json(post)
+
+  try {
+    const post = await prisma.message.delete({
+      where: {
+        id: String(id),
+      },
+    })
+
+    if (!post) throw new Error;
+
+    res.status(200).send();
+  } catch (error) {
+    res.status(404).send();
+  }
+
 });
 
 app.get(`/message/:id`, async (req, res) => {
